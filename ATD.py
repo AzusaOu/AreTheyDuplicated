@@ -1,5 +1,9 @@
 # 2017.02.02 ~ 1st LIVE!
+# 2017.02.03 ~ Muti-folder support
+
+# Refer:
 # http://blog.csdn.net/u010412949/article/details/8967874
+
 import hashlib
 import sys
 import os
@@ -16,30 +20,33 @@ def calculateFileHash(file):
 	f.close()
 	return s
 
-def sameSearch(folder):
+# [UPDATE] 2017.02.03 - Azuya: Now it can tackle several folders one time.
+def sameSearch(folderList):
 	print('[Info] Building the list...')
 	fileList = {}
 	sameList = {}
 	strPath = ''
 	strHash = ''
 	lstPath = []
-	for root, dirs, files in os.walk(folder):
-		for file in files:
-			try:
-				strPath = os.path.join(root, file)
-				strHash = calculateFileHash(strPath)
-				if strHash in fileList.keys():
-					fileList[strHash].append(strPath)
-					print('[Find] %s' % strHash)
-				else:
-					fileList[strHash] = [strPath]
-			except:
-				print('[Error] Failed in <%s>.' % strPath)
-				pass
+	for folder in folderList:
+		for root, dirs, files in os.walk(folder):
+			for file in files:
+				try:
+					strPath = os.path.join(root, file)
+					strHash = calculateFileHash(strPath)
+					if strHash in fileList.keys():
+						fileList[strHash].append(strPath)
+						print('[Find] %s' % strHash)
+					else:
+						fileList[strHash] = [strPath]
+				except:
+					print('[Error] Failed in <%s>.' % strPath)
+					pass
 	print('[Info] Preparing...')
 	for key in fileList.keys():
 		if len(fileList[key]) > 1:
 			sameList[key] = fileList[key]
+	# print(fileList)
 	return sameList
 	# {<hash>:[xxx, xxx, xxx]}
 
@@ -109,9 +116,13 @@ def fileRemove(pathList):
 	if os.path.isdir(strTrash) == False:
 		os.mkdir(strTrash)
 	for delPath in pathList:
-		print('[Info] Removing %s' % delPath)
-		shutil.move(delPath, os.path.join(strTrash, os.path.basename(delPath)+str(random.randint(0,1000))))
-		os.system('echo %s >> %s' % (delPath, os.path.join(strTrash, '###_LOG_###.txt')))
+		try:
+			print('[Info] Remove %s' % delPath)
+			shutil.move(delPath, os.path.join(strTrash, os.path.basename(delPath)+str(random.randint(0,1000))))
+			os.system('echo %s >> %s' % (delPath, os.path.join(strTrash, '###_LOG_###.txt')))
+		except:
+			print('[Error] Cannot find %s' % delPath)
+			pass
 
 def KYMUI2017(strTITLE, strWELCOME, lstSELECT):
 	# v1.0: 2017.02.02
@@ -135,19 +146,30 @@ def KYMUI2017(strTITLE, strWELCOME, lstSELECT):
 		choice = int(raw_input('>> Select what to do: '))
 		print(' ')
 
-		# ====== What to do ======
+		# ====== Functions ======
+# Build the hash list
 		if choice == 0:
-			par = raw_input('>> Path: ')
-			sameLst = sameSearch(par)
+			folders = []
+			strGet = '###'
+			while True:
+				strGet = raw_input('>> Path: ')
+				if strGet == '':
+					break
+				folders.append(strGet)
+			sameLst = sameSearch(folders)
+
+# Filt what to remove
 		elif choice == 1:
 			par = raw_input('>> [-l| -s| -b| ~]: ')
 			val = raw_input('>> Parameter(if have): ')
 			delLst = what2Remove(sameLst, par, val)
+
+# Execute remove			
 		elif choice == 2:
 			par = raw_input('>> Are you sure?(y/n) ')
 			if par == 'y':
 				fileRemove(delLst)
-				sameLst = {}
+				# sameLst = {}
 				delLst = []
 		# ========================
 
@@ -158,4 +180,4 @@ if __name__ == '__main__':
 	functions = ['Build the hash list',
 	'Filt what to remove',
 	'Execute remove']
-	KYMUI2017('Are They Duplicated', 'Azuya - 2017.02.02', functions)
+	KYMUI2017('Are They Duplicated', 'Azuya - 170203', functions)
